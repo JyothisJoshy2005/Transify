@@ -7,26 +7,25 @@ export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-dark-950">
+    <div className="app-layout">
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      {/* Main content area */}
-      <div className="flex-1 flex flex-col min-w-0 lg:ml-[220px]">
+      <div className="main-content">
         {/* Mobile topbar */}
-        <header className="lg:hidden flex items-center gap-3 px-4 h-14 bg-white dark:bg-dark-900 border-b border-slate-100 dark:border-slate-800 flex-shrink-0">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="btn-ghost p-2"
-          >
+        <div className="lg:hidden flex items-center gap-3 px-4 py-3 sticky top-0 z-30"
+          style={{background:'var(--cream)', borderBottom:'1px solid var(--border)'}}>
+          <button onClick={() => setSidebarOpen(true)} className="btn-ghost p-2">
             <Menu className="w-5 h-5" />
           </button>
-          <span className="font-bold text-slate-900 dark:text-white">Transify AI</span>
-        </header>
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{background:'var(--teal)'}}>
+              <span className="text-white text-xs font-bold">T</span>
+            </div>
+            <span className="font-bold text-sm" style={{color:'var(--text-dark)'}}>Transify AI</span>
+          </div>
+        </div>
 
-        {/* Page content */}
-        <main className="flex-1 overflow-y-auto">
-          <Outlet />
-        </main>
+        <Outlet />
       </div>
     </div>
   )

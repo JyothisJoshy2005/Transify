@@ -1,92 +1,64 @@
 import { NavLink } from 'react-router-dom'
-import { useTheme } from '../context/ThemeContext'
-import {
-  Home, Globe, ScanText, MessageSquare, History,
-  Sun, Moon, Zap, X
-} from 'lucide-react'
+import { Globe, ScanText, MessageSquare, History, Home, Zap, X, Settings, LogOut } from 'lucide-react'
 
 const NAV_ITEMS = [
-  { to: '/',         label: 'Home',      icon: Home },
-  { to: '/translate',label: 'Translator',icon: Globe },
-  { to: '/ocr',      label: 'OCR',       icon: ScanText },
-  { to: '/chat',     label: 'Live Chat', icon: MessageSquare },
-  { to: '/history',  label: 'History',   icon: History },
+  { to: '/chat',     label: 'Chats',      icon: MessageSquare },
+  { to: '/translate',label: 'Translator', icon: Globe },
+  { to: '/ocr',      label: 'OCR',        icon: ScanText },
+  { to: '/history',  label: 'History',    icon: History },
+  { to: '/',         label: 'Home',       icon: Home, end: true },
 ]
 
 export default function Sidebar({ open, onClose }) {
-  const { dark, toggle } = useTheme()
-
   return (
     <>
-      {/* Mobile overlay */}
       {open && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-          onClick={onClose}
-        />
+        <div className="fixed inset-0 bg-black/40 z-40 lg:hidden" onClick={onClose} />
       )}
 
-      {/* Sidebar panel */}
-      <aside
-        className={`
-          fixed top-0 left-0 h-full z-50 flex flex-col
-          w-[220px] bg-white dark:bg-dark-900
-          border-r border-slate-100 dark:border-slate-800
-          transition-transform duration-300 ease-in-out
-          lg:translate-x-0
-          ${open ? 'translate-x-0' : '-translate-x-full'}
-        `}
-      >
+      <aside className={`sidebar transition-transform duration-300 lg:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'}`}>
         {/* Logo */}
-        <div className="flex items-center justify-between px-5 py-5 border-b border-slate-100 dark:border-slate-800">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center shadow-lg shadow-primary-500/30">
-              <Zap className="w-4 h-4 text-white" />
-            </div>
-            <div>
-              <p className="font-bold text-sm text-slate-900 dark:text-white leading-none">Transify AI</p>
-              <p className="text-[10px] text-slate-400 dark:text-slate-500 leading-none mt-0.5">Multilingual Platform</p>
-            </div>
+        <div className="sidebar-logo">
+          <div className="sidebar-logo-icon">
+            <Zap className="w-5 h-5 text-white" />
           </div>
-          <button
-            onClick={onClose}
-            className="lg:hidden btn-ghost p-1.5"
-          >
+          <div>
+            <div className="sidebar-logo-text">Transify AI</div>
+            <div className="sidebar-logo-sub">Multilingual Platform</div>
+          </div>
+          <button onClick={onClose} className="ml-auto lg:hidden text-white/40 hover:text-white">
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-          {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
+        {/* Nav */}
+        <nav className="sidebar-nav">
+          <p className="section-label px-3 mb-3" style={{color:'rgba(255,255,255,0.3)'}}>Navigation</p>
+          {NAV_ITEMS.map(({ to, label, icon: Icon, end }) => (
             <NavLink
               key={to}
               to={to}
-              end={to === '/'}
+              end={end}
               onClick={onClose}
-              className={({ isActive }) =>
-                `nav-link ${isActive ? 'active' : ''}`
-              }
+              className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
             >
-              <Icon className="w-4 h-4 flex-shrink-0" />
+              <Icon className="nav-icon" />
               <span>{label}</span>
             </NavLink>
           ))}
         </nav>
 
-        {/* Bottom — Theme Toggle */}
-        <div className="p-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
-          <button
-            onClick={toggle}
-            className="nav-link w-full"
-          >
-            {dark
-              ? <Sun  className="w-4 h-4 text-amber-400" />
-              : <Moon className="w-4 h-4 text-slate-500" />
-            }
-            <span>{dark ? 'Light Mode' : 'Dark Mode'}</span>
+        {/* Footer */}
+        <div className="sidebar-footer space-y-1">
+          <button className="nav-link w-full">
+            <Settings className="nav-icon" />
+            <span>Settings</span>
           </button>
-          <p className="text-center text-[10px] text-slate-400 dark:text-slate-600 pb-1">
+          <button className="nav-link w-full" style={{color:'rgba(232,117,64,0.7)'}}>
+            <LogOut className="nav-icon" />
+            <span>Logout</span>
+          </button>
+          <p className="text-center pt-2" style={{fontSize:'10px', color:'rgba(255,255,255,0.2)'}}>
             v1.0.0 · Free & Open Source
           </p>
         </div>

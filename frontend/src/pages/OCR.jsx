@@ -1,216 +1,200 @@
-import { useState, useRef, useCallback } from 'react'
-import { ScanText, Upload, X, ImageIcon, Copy, Info, ArrowRight } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { ScanText, Upload, X, ArrowRight, Copy, Check, Loader, Image } from 'lucide-react'
 import { ocrTranslate } from '../utils/api'
-import { LANGUAGES_NO_AUTO } from '../utils/helpers'
 import AccuracyBar from '../components/AccuracyBar'
-import LoadingSpinner from '../components/LoadingSpinner'
 
-const ACCEPTED = ['image/png', 'image/jpeg', 'image/jpg', 'image/bmp', 'image/webp']
+const LANGUAGES = [
+  { code: 'en',  name: 'English' },
+  { code: 'hi',  name: 'Hindi' },
+  { code: 'ml',  name: 'Malayalam' },
+  { code: 'ta',  name: 'Tamil' },
+  { code: 'de',  name: 'German' },
+  { code: 'fr',  name: 'French' },
+]
+const OCR_LANGS = [
+  { code: 'eng', name: 'English' },
+  { code: 'hin', name: 'Hindi' },
+  { code: 'mal', name: 'Malayalam' },
+  { code: 'tam', name: 'Tamil' },
+]
 
 export default function OCR() {
-  const [file, setFile]           = useState(null)
-  const [preview, setPreview]     = useState(null)
-  const [targetLang, setTargetLang] = useState('en')
-  const [ocrLang, setOcrLang]     = useState('en')
-  const [result, setResult]       = useState(null)
-  const [loading, setLoading]     = useState(false)
-  const [error, setError]         = useState('')
-  const [dragging, setDragging]   = useState(false)
-  const [copiedField, setCopiedField] = useState('')
-  const inputRef = useRef()
+  const [image, setImage]           = useState(null)
+  const [preview, setPreview]       = useState('')
+  const [ocrLang, setOcrLang]       = useState('eng')
+  const [tgtLang, setTgtLang]       = useState('ml')
+  const [result, setResult]         = useState(null)
+  const [loading, setLoading]       = useState(false)
+  const [error, setError]           = useState('')
+  const [copied, setCopied]         = useState(false)
+  const [dragging, setDragging]     = useState(false)
+  const fileRef = useRef()
 
-  const loadFile = (f) => {
-    if (!f || !ACCEPTED.includes(f.type)) {
-      setError('Unsupported format. Please upload JPG, PNG, JPEG, BMP, or WEBP.')
-      return
-    }
-    setFile(f)
-    setError('')
-    setResult(null)
-    setPreview(URL.createObjectURL(f))
+  const handleFile = file => {
+    if (!file || !file.type.startsWith('image/')) return
+    setImage(file)
+    setPreview(URL.createObjectURL(file))
+    setResult(null); setError('')
   }
 
-  const handleDrop = useCallback((e) => {
+  const handleDrop = e => {
     e.preventDefault(); setDragging(false)
-    loadFile(e.dataTransfer.files[0])
-  }, [])
-
-  const handleDragOver = (e) => { e.preventDefault(); setDragging(true) }
-  const handleDragLeave = () => setDragging(false)
-
-  const handleRemove = () => {
-    setFile(null); setPreview(null); setResult(null); setError('')
-    if (preview) URL.revokeObjectURL(preview)
+    handleFile(e.dataTransfer.files[0])
   }
 
-  const handleTranslate = async () => {
-    if (!file) { setError('Please upload an image first.'); return }
+  const handleProcess = async () => {
+    if (!image) return
     setLoading(true); setError(''); setResult(null)
     try {
-      const fd = new FormData()
-      fd.append('image', file)
-      fd.append('target_lang', targetLang)
-      fd.append('ocr_lang', ocrLang)
-      const data = await ocrTranslate(fd)
+      const data = await ocrTranslate(image, tgtLang, ocrLang)
       setResult(data)
-    } catch (err) {
-      setError(err.message)
+    } catch (e) {
+      setError(e.message)
     } finally {
       setLoading(false)
     }
   }
 
-  const handleCopy = async (text, field) => {
-    await navigator.clipboard.writeText(text)
-    setCopiedField(field)
-    setTimeout(() => setCopiedField(''), 2000)
-  }
+  const clear = () => { setImage(null); setPreview(''); setResult(null); setError('') }
 
   return (
-    <div className="p-6 md:p-10 max-w-5xl mx-auto space-y-6 animate-fade-in">
-
+    <div className="p-6 lg:p-8 max-w-4xl mx-auto animate-fade-in">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/30">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{background:'var(--teal)'}}>
           <ScanText className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h1 className="page-title">OCR Image Translation</h1>
-          <p className="page-sub">Extract text from images · Powered by Tesseract OCR</p>
+          <h1 className="page-title">OCR Translator</h1>
+          <p className="page-sub">Extract text from images and translate instantly</p>
         </div>
       </div>
 
-      {/* Language selectors */}
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5 block">Text Language in Image</label>
+      {/* Language controls */}
+      <div className="card p-4 mb-5 flex flex-wrap gap-4">
+        <div className="flex-1 min-w-[140px]">
+          <label className="section-label block mb-1.5">Image Language</label>
           <select className="select" value={ocrLang} onChange={e => setOcrLang(e.target.value)}>
-            {LANGUAGES_NO_AUTO.map(l => <option key={l.code} value={l.code}>{l.name}</option>)}
+            {OCR_LANGS.map(l => <option key={l.code} value={l.code}>{l.name}</option>)}
           </select>
         </div>
-        <div>
-          <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5 block">Translate To</label>
-          <select className="select" value={targetLang} onChange={e => setTargetLang(e.target.value)}>
-            {LANGUAGES_NO_AUTO.map(l => <option key={l.code} value={l.code}>{l.name}</option>)}
+        <div className="flex items-end pb-0.5">
+          <ArrowRight className="w-5 h-5" style={{color:'var(--teal)'}} />
+        </div>
+        <div className="flex-1 min-w-[140px]">
+          <label className="section-label block mb-1.5">Translate To</label>
+          <select className="select" value={tgtLang} onChange={e => setTgtLang(e.target.value)}>
+            {LANGUAGES.map(l => <option key={l.code} value={l.code}>{l.name}</option>)}
           </select>
         </div>
       </div>
 
-      {/* Drop Zone */}
-      {!preview ? (
-        <div
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onClick={() => inputRef.current?.click()}
-          className={`card p-10 border-2 border-dashed cursor-pointer text-center transition-all select-none
-            ${dragging
-              ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 scale-[1.01]'
-              : 'border-slate-200 dark:border-slate-700 hover:border-primary-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'
-            }`}
-        >
-          <input
-            ref={inputRef}
-            type="file"
-            accept={ACCEPTED.join(',')}
-            className="hidden"
-            onChange={e => loadFile(e.target.files[0])}
-          />
-          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center">
-            <Upload className="w-8 h-8 text-emerald-500" />
-          </div>
-          <p className="font-semibold text-slate-700 dark:text-slate-300 mb-1">
-            {dragging ? 'Drop image here' : 'Click or drag & drop an image'}
-          </p>
-          <p className="text-sm text-slate-400">Supports JPG, PNG, JPEG, BMP, WEBP · Max 16MB</p>
-        </div>
-      ) : (
-        /* Image Preview */
-        <div className="card p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <ImageIcon className="w-4 h-4 text-slate-400" />
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300 truncate max-w-xs">{file?.name}</span>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        {/* Upload panel */}
+        <div>
+          {!preview ? (
+            <div
+              onClick={() => fileRef.current.click()}
+              onDrop={handleDrop}
+              onDragOver={e => { e.preventDefault(); setDragging(true) }}
+              onDragLeave={() => setDragging(false)}
+              className="card cursor-pointer flex flex-col items-center justify-center text-center transition-all"
+              style={{
+                minHeight: '260px', padding: '32px',
+                borderStyle: 'dashed', borderWidth: '2px',
+                borderColor: dragging ? 'var(--teal)' : 'var(--border)',
+                background: dragging ? 'var(--teal-pale)' : 'var(--white)',
+              }}>
+              <div className="w-14 h-14 rounded-2xl mb-4 flex items-center justify-center"
+                style={{background: dragging ? 'var(--teal)' : 'var(--cream)'}}>
+                <Upload className="w-6 h-6" style={{color: dragging ? '#fff' : 'var(--teal)'}} />
+              </div>
+              <p style={{fontWeight:700, fontSize:'15px', color:'var(--text-dark)'}}>
+                {dragging ? 'Drop image here' : 'Upload Image'}
+              </p>
+              <p style={{fontSize:'12px', color:'var(--text-light)', marginTop:'6px'}}>
+                Drag & drop or click to browse
+              </p>
+              <p style={{fontSize:'11px', color:'var(--text-light)', marginTop:'4px'}}>
+                JPG, PNG, WEBP supported
+              </p>
+              <input ref={fileRef} type="file" accept="image/*" className="hidden"
+                onChange={e => handleFile(e.target.files[0])} />
             </div>
-            <button onClick={handleRemove} className="btn-ghost p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20">
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-          <div className="rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-900 flex items-center justify-center max-h-64">
-            <img src={preview} alt="Preview" className="max-h-64 object-contain" />
-          </div>
-        </div>
-      )}
-
-      {/* Translate Button */}
-      {file && (
-        <div className="flex justify-center">
-          <button
-            onClick={handleTranslate}
-            disabled={loading}
-            className="btn-primary px-10 py-3 text-base shadow-lg shadow-emerald-500/20"
-          >
-            {loading ? <LoadingSpinner size="sm" label="" /> : <ScanText className="w-4 h-4" />}
-            {loading ? 'Extracting & Translating…' : 'Extract & Translate'}
-          </button>
-        </div>
-      )}
-
-      {/* Error */}
-      {error && (
-        <div className="flex items-start gap-3 p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm animate-fade-in">
-          <Info className="w-4 h-4 mt-0.5 flex-shrink-0" /> {error}
-        </div>
-      )}
-
-      {/* Results */}
-      {result && (
-        <div className="space-y-4 animate-slide-up">
-          <div className="grid md:grid-cols-2 gap-4">
-            {/* Extracted Text */}
-            <div className="card p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest">Extracted Text</p>
-                <button onClick={() => handleCopy(result.extracted_text, 'extracted')} className="btn-ghost text-xs py-1 px-2">
-                  <Copy className="w-3.5 h-3.5" /> {copiedField === 'extracted' ? 'Copied!' : 'Copy'}
+          ) : (
+            <div className="card overflow-hidden" style={{minHeight:'260px'}}>
+              <div className="relative">
+                <img src={preview} alt="Upload" className="w-full object-contain" style={{maxHeight:'220px'}} />
+                <button onClick={clear}
+                  className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center text-white"
+                  style={{background:'rgba(28,43,57,0.7)'}}>
+                  <X className="w-3.5 h-3.5" />
                 </button>
               </div>
-              <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed min-h-[80px] whitespace-pre-wrap">
-                {result.extracted_text}
-              </p>
-              <p className="text-xs text-slate-400">{result.word_count} words extracted</p>
+              <div className="p-3 flex items-center gap-3" style={{borderTop:'1px solid var(--border)'}}>
+                <Image className="w-4 h-4" style={{color:'var(--text-light)'}} />
+                <span style={{fontSize:'12px', color:'var(--text-mid)'}} className="truncate flex-1">{image?.name}</span>
+                <button onClick={handleProcess} disabled={loading} className="btn-primary py-2 px-4 text-sm flex-shrink-0">
+                  {loading ? <Loader className="w-4 h-4 animate-spin" /> : <ScanText className="w-4 h-4" />}
+                  {loading ? 'Processing…' : 'Extract & Translate'}
+                </button>
+              </div>
             </div>
+          )}
+        </div>
 
-            {/* Translated Text */}
-            <div className="card p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest">Translation</p>
-                  <ArrowRight className="w-3 h-3 text-slate-300" />
-                  <p className="text-xs font-semibold text-primary-500 uppercase tracking-widest">{result.target_lang?.toUpperCase()}</p>
+        {/* Result panel */}
+        <div className="card p-5" style={{background: result ? 'var(--white)' : 'var(--cream)', minHeight:'260px'}}>
+          {!result && !loading && (
+            <div className="flex flex-col items-center justify-center h-full" style={{minHeight:'220px', color:'var(--text-light)'}}>
+              <ScanText className="w-10 h-10 mb-3 opacity-30" />
+              <p style={{fontSize:'13px'}}>Results will appear here</p>
+            </div>
+          )}
+
+          {loading && (
+            <div className="flex flex-col items-center justify-center h-full" style={{minHeight:'220px'}}>
+              <Loader className="w-8 h-8 animate-spin mb-3" style={{color:'var(--teal)'}} />
+              <p style={{fontSize:'13px', color:'var(--text-light)'}}>Extracting text…</p>
+            </div>
+          )}
+
+          {result && !loading && (
+            <div className="space-y-4">
+              {/* Extracted text */}
+              <div>
+                <p className="section-label mb-2">Extracted Text</p>
+                <div className="p-3 rounded-xl text-sm" style={{background:'var(--cream)', color:'var(--text-dark)', lineHeight:'1.6'}}>
+                  {result.extracted_text || '(No text detected)'}
                 </div>
-                <button onClick={() => handleCopy(result.translated_text, 'translated')} className="btn-ghost text-xs py-1 px-2">
-                  <Copy className="w-3.5 h-3.5" /> {copiedField === 'translated' ? 'Copied!' : 'Copy'}
-                </button>
               </div>
-              <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed min-h-[80px] whitespace-pre-wrap">
-                {result.translated_text}
-              </p>
+
+              {/* Translated text */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="section-label">Translation</p>
+                  <button onClick={() => { navigator.clipboard.writeText(result.translated_text); setCopied(true); setTimeout(()=>setCopied(false),2000) }}
+                    className="btn-ghost p-1 text-xs flex items-center gap-1">
+                    {copied ? <Check className="w-3 h-3" style={{color:'var(--teal)'}} /> : <Copy className="w-3 h-3" />}
+                    {copied ? 'Copied' : 'Copy'}
+                  </button>
+                </div>
+                <div className="p-3 rounded-xl text-sm font-medium" style={{background:'var(--teal-pale)', color:'var(--teal)', lineHeight:'1.6'}}>
+                  {result.translated_text}
+                </div>
+              </div>
+
+              {result.accuracy && <AccuracyBar accuracy={result.accuracy} />}
             </div>
-          </div>
+          )}
 
-          {/* Accuracy */}
-          <div className="card p-4 space-y-3">
-            <AccuracyBar accuracy={result.accuracy} />
-            <p className="text-xs text-slate-400">OCR confidence: {result.ocr_confidence?.toFixed(1)}%</p>
-          </div>
+          {error && (
+            <div className="p-3 rounded-xl text-sm mt-3" style={{background:'#fee2e2', color:'#b91c1c'}}>
+              ⚠️ {error}
+            </div>
+          )}
         </div>
-      )}
-
-      {/* Tip */}
-      <p className="text-center text-xs text-slate-400 dark:text-slate-600">
-        💡 For best OCR accuracy, use high-resolution images with clear, non-cursive text. Ensure Tesseract OCR is installed on your system.
-      </p>
+      </div>
     </div>
   )
 }
