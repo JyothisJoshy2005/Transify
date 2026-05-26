@@ -1,0 +1,15 @@
+flask==3.0.3
+flask-cors==4.0.1
+flask-socketio==5.3.6
+transformers==4.40.2
+sentencepiece==0.2.0
+torch==2.3.0
+pytesseract==0.3.10
+Pillow==10.3.0
+opencv-python==4.9.0.80
+pymongo==4.7.2
+langdetect==1.0.9
+python-socketio==5.11.2
+eventlet==0.36.1
+python-dotenv==1.0.1
+sacremoses==0.1.1

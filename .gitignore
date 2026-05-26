@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+
+# Models (large files — download on first run)
+backend/models/
+
+# Uploads temp folder
+backend/uploads/
+
+# Node
+node_modules/
+frontend/dist/
+frontend/.cache/
+
+# Env files
+.env
+.env.local
+.env.production
+
+# IDE
+.vscode/
+.idea/
+*.suo
+*.user
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
